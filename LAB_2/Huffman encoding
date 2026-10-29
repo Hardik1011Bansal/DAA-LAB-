@@ -1,0 +1,139 @@
+#include <iostream>
+#include <queue>
+#include <unordered_map>
+#include <string>
+#include <chrono>
+
+using namespace std;
+
+// Node of Huffman Tree
+struct Node {
+    char ch;
+    int freq;
+    Node* left;
+    Node* right;
+
+    Node(char c, int f) {
+        ch = c;
+        freq = f;
+        left = nullptr;
+        right = nullptr;
+    }
+};
+
+// Comparator for Min Heap
+struct Compare {
+    bool operator()(Node* a, Node* b) {
+        return a->freq > b->freq;
+    }
+};
+
+// Generate Huffman Codes
+void generateCodes(Node* root, string code,
+                   unordered_map<char, string>& huffmanCode) {
+
+    if (root == nullptr)
+        return;
+
+    // If leaf node, store its code
+    if (root->left == nullptr && root->right == nullptr) {
+        huffmanCode[root->ch] = code;
+        return;
+    }
+
+    // Left = 0
+    generateCodes(root->left, code + "0", huffmanCode);
+
+    // Right = 1
+    generateCodes(root->right, code + "1", huffmanCode);
+}
+
+// Huffman Encoding
+void huffmanEncoding(string text) {
+
+    // 1. Count frequency of each character
+    unordered_map<char, int> freq;
+
+    for (char ch : text) {
+        freq[ch]++;
+    }
+
+    // 2. Create Min Heap
+    priority_queue<Node*, vector<Node*>, Compare> pq;
+
+    for (auto pair : freq) {
+        pq.push(new Node(pair.first, pair.second));
+    }
+
+    // 3. Build Huffman Tree
+    while (pq.size() > 1) {
+
+        Node* left = pq.top();
+        pq.pop();
+
+        Node* right = pq.top();
+        pq.pop();
+
+        Node* parent = new Node('\0',
+                                left->freq + right->freq);
+
+        parent->left = left;
+        parent->right = right;
+
+        pq.push(parent);
+    }
+
+    // Root of Huffman Tree
+    Node* root = pq.top();
+
+    // 4. Generate Huffman Codes
+    unordered_map<char, string> huffmanCode;
+
+    generateCodes(root, "", huffmanCode);
+
+    // 5. Display frequency and code
+    cout << "\nCharacter\tFrequency\tCode\n";
+    cout << "--------------------------------\n";
+
+    for (auto pair : freq) {
+        cout << pair.first << "\t\t"
+             << pair.second << "\t\t"
+             << huffmanCode[pair.first] << endl;
+    }
+
+    // 6. Encode the original text
+    string encodedText = "";
+
+    for (char ch : text) {
+        encodedText += huffmanCode[ch];
+    }
+
+    cout << "\nEncoded text:\n";
+    cout << encodedText << endl;
+}
+
+int main() {
+
+    string text;
+
+    cout << "Enter text: ";
+    cin >> text;
+
+    // Start timer
+    auto start = chrono::high_resolution_clock::now();
+
+    huffmanEncoding(text);
+
+    // Stop timer
+    auto end = chrono::high_resolution_clock::now();
+
+    auto duration =
+        chrono::duration_cast<chrono::microseconds>
+        (end - start);
+
+    cout << "\nTime taken: "
+         << duration.count()
+         << " microseconds\n";
+
+    return 0;
+}
